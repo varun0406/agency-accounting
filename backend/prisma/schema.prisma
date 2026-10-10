@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PartyRole {
+  SUPPLIER
+  BUYER
+  BOTH
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+}
+
+model Party {
+  id                   String   @id @default(uuid())
+  code                 String   @unique
+  name                 String
+  role                 PartyRole
+  contactPerson        String?
+  mobile               String?
+  email                String?
+  billingAddress       String?
+  state                String?
+  stateCode            String?
+  gstin                String?
+  pan                  String?
+  creditPeriodDays     Int?     @default(0)
+  defaultPaymentTerms  String?
+  openingBalanceAmount Decimal  @default(0)
+  openingBalanceType   String?  // 'RECEIVABLE', 'PAYABLE'
+  bankDetails          String?
+  commissionRate       Decimal  @default(0)
+  notes                String?
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  supplierInvoices     TradeInvoice[]   @relation("SupplierInvoices")
+  buyerInvoices        TradeInvoice[]   @relation("BuyerInvoices")
+  supplierNotes        AdjustmentNote[] @relation("SupplierNotes")
+  buyerNotes           AdjustmentNote[] @relation("BuyerNotes")
+  settlementsAsPayer   Settlement[]     @relation("PayerSettlements")
+  settlementsAsPayee   Settlement[]     @relation("PayeeSettlements")
+  agentVouchers        AgentVouchers[]  @relation("AgentVoucherParty")
+  commissionRecords    CommissionRecord[] @relation("CommissionParty")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  POSTED
+  PARTIALLY_SETTLED
+  SETTLED
+  OVERDUE
+  CANCELLED
+}
+
+model TradeInvoice {
+  id                 String   @id @default(uuid())
+  voucherNumber      String   @unique
+  supplierId         String
+  buyerId            String
+  supplierBillNumber String?
+  billDate           DateTime
+  dueDate            DateTime?
+  lrNumber           String?
+  creditTerms        String?
+  status             InvoiceStatus @default(DRAFT)
+  remarks            String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  supplier           Party    @relation("SupplierInvoices", fields: [supplierId], references: [id])
+  buyer              Party    @relation("BuyerInvoices", fields: [buyerId], references: [id])
+  lines              TradeInvoiceLine[]
+  allocations        SettlementAllocation[]
+  adjustmentNotes    AdjustmentNote[]
+  commissionRecords  CommissionRecord[]
+}
+
+model TradeInvoiceLine {
+  id                 String   @id @default(uuid())
+  tradeInvoiceId     String
+  itemDescription    String
+  fabricCategory     String?
+  quantityMeters     Decimal
+  ratePerMeter       Decimal
+  lineTotal          Decimal
+  discount           Decimal  @default(0)
+  gstRate            Decimal  @default(0)
+  taxAmount          Decimal  @default(0)
+  otherCharges       Decimal  @default(0)
+
+  tradeInvoice       TradeInvoice @relation(fields: [tradeInvoiceId], references: [id], onDelete: Cascade)
+}
+
+enum NoteType {
+  SALES_RETURN
+  PURCHASE_RETURN
+  DEBIT_NOTE
+  CREDIT_NOTE
+}
+
+model AdjustmentNote {
+  id                    String   @id @default(uuid())
+  noteNumber            String   @unique
+  noteType              NoteType
+  noteDate              DateTime
+  supplierId            String
+  buyerId               String
+  tradeInvoiceId        String?
+  itemDescription       String?
+  adjustedMeters        Decimal?
+  rate                  Decimal?
+  taxableValue          Decimal?
+  gstDetails            String?
+  totalAdjustmentAmount Decimal
+  adjustmentDirection   String // 'INCREASE', 'DECREASE'
+  reason                String?
+  remarks               String?
+  createdAt             DateTime @default(now())
+
+  supplier              Party    @relation("SupplierNotes", fields: [supplierId], references: [id])
+  buyer                 Party    @relation("BuyerNotes", fields: [buyerId], references: [id])
+  tradeInvoice          TradeInvoice? @relation(fields: [tradeInvoiceId], references: [id])
+}
+
+model Settlement {
+  id                    String   @id @default(uuid())
+  referenceNumber       String   @unique
+  settlementDate        DateTime
+  payerId               String
+  payeeId               String
+  amount                Decimal
+  paymentMode           String?
+  bankReference         String?
+  agentHandledMoney     Boolean  @default(false)
+  unallocatedAmount     Decimal
+  remarks               String?
+  createdAt             DateTime @default(now())
+
+  payer                 Party    @relation("PayerSettlements", fields: [payerId], references: [id])
+  payee                 Party    @relation("PayeeSettlements", fields: [payeeId], references: [id])
+  allocations           SettlementAllocation[]
+}
+
+model SettlementAllocation {
+  id                    String   @id @default(uuid())
+  settlementId          String
+  tradeInvoiceId        String
+  allocatedAmount       Decimal
+  createdAt             DateTime @default(now())
+
+  settlement            Settlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+  tradeInvoice          TradeInvoice @relation(fields: [tradeInvoiceId], references: [id], onDelete: Cascade)
+}
+
+model AgentVouchers {
+  id                    String   @id @default(uuid())
+  voucherType           String   // RECEIPT, PAYMENT, JOURNAL
+  voucherNumber         String   @unique
+  voucherDate           DateTime
+  partyId               String
+  amount                Decimal
+  accountName           String
+  paymentMode           String
+  referenceNumber       String?
+  purpose               String?
+  remarks               String?
+  createdAt             DateTime @default(now())
+
+  party                 Party    @relation("AgentVoucherParty", fields: [partyId], references: [id])
+}
+
+model CommissionRecord {
+  id                    String   @id @default(uuid())
+  referenceNumber       String   @unique
+  partyId               String
+  tradeInvoiceId        String?
+  basis                 String   // PERCENTAGE, RATE_PER_METER, FIXED
+  rate                  Decimal?
+  amount                Decimal
+  status                String   @default("EARNED") // EARNED, BILLED, COLLECTED
+  remarks               String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  party                 Party    @relation("CommissionParty", fields: [partyId], references: [id])
+  tradeInvoice          TradeInvoice? @relation(fields: [tradeInvoiceId], references: [id])
+}
