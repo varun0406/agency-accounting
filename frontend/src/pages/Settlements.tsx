@@ -88,13 +88,7 @@ export default function Settlements() {
     if (!confirm('Are you sure you want to delete this Settlement?')) return;
     try {
       await axios.delete(`${API_URL}/settlements/${id}`);
-      if (typeof fetchInvoices === 'function' && typeof fetchInvoices !== 'undefined') fetchInvoices();
-      if (typeof fetchNotes === 'function' && typeof fetchNotes !== 'undefined') fetchNotes();
-      if (typeof fetchSettlements === 'function' && typeof fetchSettlements !== 'undefined') fetchSettlements();
-      if (typeof fetchVouchers === 'function' && typeof fetchVouchers !== 'undefined') fetchVouchers();
-      if (typeof fetchCommissions === 'function' && typeof fetchCommissions !== 'undefined') fetchCommissions();
-      if (typeof fetchParties === 'function' && typeof fetchParties !== 'undefined') fetchParties();
-    } catch (error) {
+                                        } catch (error) {
       console.error(error);
       alert('Failed to delete Settlement');
     }
@@ -150,7 +144,6 @@ export default function Settlements() {
                   <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
                     No settlements recorded yet.
                   </td>
-                  <td><button className="btn btn-outline" style={{padding: '0.25rem 0.5rem', color: 'var(--color-danger)'}} onClick={() => handleDelete(settlement.id)}>Delete</button></td>
                 </tr>
               )}
             </tbody>
