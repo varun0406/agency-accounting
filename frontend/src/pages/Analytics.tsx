@@ -158,9 +158,9 @@ export default function Analytics() {
               <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>Current pending balance</p>
             </div>
             <div style={{ padding: '1.5rem', backgroundColor: '#fff', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Returns & Adjustments</p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Sales Returns &amp; Deductions</p>
               <h3 style={{ fontSize: '1.75rem', color: 'var(--color-warning)' }}>₹{partyMetrics.totalReturns.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
-              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>Value decreased due to notes</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>Total deductions, returns &amp; discounts</p>
             </div>
           </motion.div>
         ) : (

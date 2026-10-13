@@ -98,47 +98,158 @@ app.get('/api/invoices', async (req, res) => {
 
 app.post('/api/invoices', async (req, res) => {
   try {
-    const { supplierId, buyerId, supplierBillNumber, billDate, dueDate, lines } = req.body;
+    const { supplierId, buyerId, supplierBillNumber, billDate, dueDate, lines, amount, itemDescription } = req.body;
     
     // Auto-generate voucher number
     const count = await prisma.tradeInvoice.count();
     const voucherNumber = `TRD-${1000 + count + 1}`;
+
+    const lineItems = (Array.isArray(lines) && lines.length > 0)
+      ? lines.map(line => {
+          const baseTotal = Number(line.quantityMeters) * Number(line.ratePerMeter);
+          const discount = Number(line.discount) || 0;
+          const lineTotal = baseTotal - discount;
+          const gstRate = Number(line.gstRate) || 0;
+          const taxAmount = lineTotal * (gstRate / 100);
+          const otherCharges = Number(line.otherCharges) || 0;
+          
+          return {
+            itemDescription: line.itemDescription || 'Cloth Material',
+            quantityMeters: line.quantityMeters || 1,
+            ratePerMeter: line.ratePerMeter || lineTotal,
+            discount: discount,
+            lineTotal: lineTotal,
+            gstRate: gstRate,
+            taxAmount: taxAmount,
+            otherCharges: otherCharges
+          };
+        })
+      : [{
+          itemDescription: itemDescription || 'Cloth Goods',
+          quantityMeters: 1,
+          ratePerMeter: Number(amount) || 0,
+          discount: 0,
+          lineTotal: Number(amount) || 0,
+          gstRate: 0,
+          taxAmount: 0,
+          otherCharges: 0
+        }];
 
     const invoice = await prisma.tradeInvoice.create({
       data: {
         voucherNumber,
         supplierId,
         buyerId,
-        supplierBillNumber,
+        supplierBillNumber: supplierBillNumber || null,
         billDate: new Date(billDate),
         dueDate: dueDate ? new Date(dueDate) : null,
         lines: {
-          create: lines.map(line => {
-            const baseTotal = Number(line.quantityMeters) * Number(line.ratePerMeter);
-            const discount = Number(line.discount) || 0;
-            const lineTotal = baseTotal - discount;
-            const gstRate = Number(line.gstRate) || 0;
-            const taxAmount = lineTotal * (gstRate / 100);
-            const otherCharges = Number(line.otherCharges) || 0;
-            
-            return {
-              itemDescription: line.itemDescription,
-              quantityMeters: line.quantityMeters,
-              ratePerMeter: line.ratePerMeter,
-              discount: discount,
-              lineTotal: lineTotal,
-              gstRate: gstRate,
-              taxAmount: taxAmount,
-              otherCharges: otherCharges
-            };
-          })
+          create: lineItems
         }
       },
-      include: { lines: true }
+      include: { lines: true, supplier: true, buyer: true }
     });
     res.json(invoice);
   } catch (error) {
     console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// === Bulk Invoices API ===
+app.post('/api/invoices/bulk', async (req, res) => {
+  try {
+    const { invoices } = req.body;
+    if (!Array.isArray(invoices) || invoices.length === 0) {
+      return res.status(400).json({ error: 'No invoices provided' });
+    }
+
+    const allParties = await prisma.party.findMany();
+    const partyMap = new Map();
+    allParties.forEach(p => partyMap.set(p.name.trim().toLowerCase(), p));
+
+    let count = await prisma.tradeInvoice.count();
+    const createdList = [];
+
+    for (const inv of invoices) {
+      let supId = inv.supplierId;
+      let buyId = inv.buyerId;
+
+      // Match or auto-create supplier by name if name provided
+      if (!supId && inv.supplierName && inv.supplierName.trim()) {
+        const sName = inv.supplierName.trim();
+        let sup = partyMap.get(sName.toLowerCase());
+        if (!sup) {
+          const partyCount = await prisma.party.count();
+          sup = await prisma.party.create({
+            data: {
+              code: `P-${1000 + partyCount + 1}`,
+              name: sName,
+              role: 'SUPPLIER'
+            }
+          });
+          partyMap.set(sName.toLowerCase(), sup);
+        }
+        supId = sup.id;
+      }
+
+      // Match or auto-create buyer by name if name provided
+      if (!buyId && inv.buyerName && inv.buyerName.trim()) {
+        const bName = inv.buyerName.trim();
+        let buy = partyMap.get(bName.toLowerCase());
+        if (!buy) {
+          const partyCount = await prisma.party.count();
+          buy = await prisma.party.create({
+            data: {
+              code: `P-${1000 + partyCount + 1}`,
+              name: bName,
+              role: 'BUYER'
+            }
+          });
+          partyMap.set(bName.toLowerCase(), buy);
+        }
+        buyId = buy.id;
+      }
+
+      if (!supId || !buyId) continue;
+
+      count += 1;
+      const voucherNumber = `TRD-${1000 + count}`;
+      const invAmount = Number(inv.amount) || 0;
+      const bDate = inv.billDate ? new Date(inv.billDate) : new Date();
+      const dDate = inv.dueDate ? new Date(inv.dueDate) : null;
+      const billNo = inv.supplierBillNumber ? String(inv.supplierBillNumber).trim() : null;
+
+      const created = await prisma.tradeInvoice.create({
+        data: {
+          voucherNumber,
+          supplierId: supId,
+          buyerId: buyId,
+          supplierBillNumber: billNo,
+          billDate: bDate,
+          dueDate: dDate,
+          lines: {
+            create: [{
+              itemDescription: inv.itemDescription || 'Cloth Goods',
+              quantityMeters: 1,
+              ratePerMeter: invAmount,
+              discount: 0,
+              lineTotal: invAmount,
+              gstRate: 0,
+              taxAmount: 0,
+              otherCharges: 0
+            }]
+          }
+        },
+        include: { lines: true, supplier: true, buyer: true }
+      });
+
+      createdList.push(created);
+    }
+
+    res.json({ success: true, count: createdList.length, invoices: createdList });
+  } catch (error) {
+    console.error('Bulk invoice creation error:', error);
     res.status(500).json({ error: error.message });
   }
 });

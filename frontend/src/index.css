@@ -227,3 +227,72 @@ button {
   .input-field { font-size: 16px; /* Prevents iOS zoom */ }
   h1 { font-size: 1.5rem !important; }
 }
+
+/* Print & PDF Export Styles */
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}
+
+@media print {
+  @page {
+    margin: 10mm 12mm;
+    size: A4 portrait;
+  }
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 10pt !important;
+    line-height: 1.3 !important;
+  }
+  .sidebar,
+  .no-print,
+  button,
+  .print-hide {
+    display: none !important;
+  }
+  .app-container {
+    display: block !important;
+  }
+  .main-content {
+    padding: 0 !important;
+    margin: 0 !important;
+    background-color: transparent !important;
+    overflow: visible !important;
+  }
+  .premium-card {
+    box-shadow: none !important;
+    border: 1px solid #999999 !important;
+    border-radius: 4px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 1.5rem !important;
+    padding: 1rem !important;
+  }
+  .data-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 8.5pt !important;
+  }
+  .data-table th, .data-table td {
+    border: 1px solid #cccccc !important;
+    padding: 4px 6px !important;
+    color: #000000 !important;
+  }
+  .data-table th {
+    background-color: #f1f3f5 !important;
+    color: #000000 !important;
+    font-weight: 700 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #000000;
+  }
+}

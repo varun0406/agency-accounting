@@ -65,7 +65,7 @@ export default function Commissions() {
           <h1 style={{ fontSize: '1.75rem', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Percent size={28} color="var(--color-primary)" /> Auto-Commission Ledger
           </h1>
-          <p style={{ color: 'var(--color-text-muted)' }}>Dynamically calculates your earned commission based on the Net Trade Value (Invoices ± Adjustments).</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>Dynamically calculates your earned commission based on the Net Trade Value (Invoices ± Sales Returns &amp; Deductions).</p>
         </div>
       </div>
 

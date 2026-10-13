@@ -27,7 +27,7 @@ export default function Dashboard() {
   const stats = [
     { title: 'Total Unsettled Trade', value: `₹${statsData.totalUnsettled.toLocaleString()}`, icon: IndianRupee, change: 'Live', isPositive: true },
     { title: 'Total Overdue Balance', value: `₹${statsData.totalOverdue.toLocaleString()}`, icon: AlertCircle, change: 'Live', isPositive: true },
-    { title: 'Recent Settlements', value: `₹${statsData.recentSettlements.toLocaleString()}`, icon: TrendingUp, change: 'Live', isPositive: true },
+    { title: 'Recent Payments & Settlements', value: `₹${statsData.recentSettlements.toLocaleString()}`, icon: TrendingUp, change: 'Live', isPositive: true },
     { title: 'Active Parties', value: statsData.activeParties.toString(), icon: Users, change: 'Live', isPositive: true },
   ];
 
@@ -40,7 +40,7 @@ export default function Dashboard() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>Dashboard</h1>
-          <p style={{ color: 'var(--color-text-muted)' }}>Overview of trade balances and settlements.</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>Overview of trade balances, payments, returns and settlements.</p>
         </div>
         <Link to="/invoices">
           <button className="btn btn-primary">

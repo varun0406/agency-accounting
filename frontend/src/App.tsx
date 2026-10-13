@@ -22,11 +22,11 @@ function Sidebar() {
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Parties', path: '/parties', icon: Users },
     { name: 'Trade Invoices', path: '/invoices', icon: FileText },
-    { name: 'Adjustments', path: '/notes', icon: Edit3 },
-    { name: 'Settlements', path: '/settlements', icon: CreditCard },
+    { name: 'Sales Returns & Deductions', path: '/notes', icon: Edit3 },
+    { name: 'Payments & Settlements', path: '/settlements', icon: CreditCard },
     { name: 'Agent Cashbook', path: '/vouchers', icon: Wallet },
     { name: 'Commissions', path: '/commissions', icon: Percent },
-    { name: 'Reports', path: '/reports', icon: Activity },
+    { name: 'Reports & O/S Ledgers', path: '/reports', icon: Activity },
     { name: 'Analytics', path: '/analytics', icon: PieChart },
   ];
 
